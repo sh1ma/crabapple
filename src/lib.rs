@@ -1,6 +1,3 @@
-extern crate objc;
-
-
 use std::os::raw::{c_char, c_void};
 
 extern "C" {
@@ -58,8 +55,12 @@ static LOAD: extern fn() = {
                 objc_getClass(to_c_str("SBDockView")),
                 sel!(setBackgroundAlpha:),
             ) as *mut Method;
-            let swizz_imp: Imp = std::mem::transmute(&my_setBackgroundAlpha);
-            ORIGIMP = Some(method_setImplementation(method, swizz_imp));
+            // first need to get a function pointer
+            let f: setBackgroundAlpha = my_setBackgroundAlpha;
+            // then we can transmute it to change its type
+            let swizz_imp: Imp = std::mem::transmute(f);
+            NSLogv(to_c_str(&format!("method = {:#?}, f = {:#?}, swizz_imp = {:#?}", method, f, swizz_imp)));
+            Some(method_setImplementation(method, swizz_imp));
         } 
     }
     ctor  
