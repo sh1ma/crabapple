@@ -1,0 +1,15 @@
+---
+name: ReachCCRust
+icmd: sbreload
+
+BuildWithCargo:
+  type: stage
+  stage: RUSTC=~/Downloads/rustc-ios-patched/bin/rustc cargo build --target aarch64-apple-ios
+
+CreateTweak:
+  type: stage
+  stage: 
+    - mkdir -p .dragon/_/Library/MobileSubstrate/DynamicLibraries/
+    - cp ReachCCRust.plist .dragon/_/Library/MobileSubstrate/DynamicLibraries/ReachCCRust.plist 
+    - cp target/aarch64-apple-ios/debug/libReachCCRust.dylib .dragon/_/Library/MobileSubstrate/DynamicLibraries/ReachCCRust.dylib
+    - ldid -S .dragon/_/Library/MobileSubstrate/DynamicLibraries/ReachCCRust.dylib

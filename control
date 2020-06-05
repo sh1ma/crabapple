@@ -1,0 +1,9 @@
+Package: me.kritanta.hidedockrust
+Name: hidedockrust
+Depends: firmware (>= 13.0), mobilesubstrate, preferenceloader
+Version: 1.1.1-1b
+Architecture: iphoneos-arm
+Description: Hide your dock in rust because god is dead.
+Maintainer: kritanta
+Author: kritanta
+Section: Tweaks
