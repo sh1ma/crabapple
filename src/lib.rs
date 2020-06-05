@@ -6,13 +6,17 @@ use std::os::raw::{c_char, c_void};
 extern "C" {
     fn OBJC_NSString(str: *const c_char) -> *mut c_void;
     fn OBJC_NSLog(str: *const c_char);
-    fn NSLogv(nsFormat: *mut c_void, ...); // currently segfaults
+    fn NSLogv(nsFormat: *mut c_void); // formast from inside rust or it dies
 }
 
 #[inline(always)]
 fn to_c_str(s: &str) -> *const c_char {
+    let mut bytes = String::from(str).into_bytes();
+    bytes.push(0);
+    let ptr = bytes.as_ptr();
+    std::mem::forget(bytes);
     unsafe {
-        std::ffi::CStr::from_ptr(s.as_ptr() as *const c_string::c_char).as_ptr()
+        std::ffi::CStr::from_ptr(ptr as *const c_string::c_char).as_ptr()
     }
 }
 
@@ -22,9 +26,8 @@ static LOAD: extern fn() = {
     extern fn ctor() {
         unsafe {
             let a1 = OBJC_NSString(to_c_str("HELLO FROM RUST (NSlogv)"));
-            let fm = OBJC_NSString(to_c_str("%@"));
-            println!("a1={:#?}, fm={:#?}", a1, fm);
-            //NSLogv(fm, a1);
+            println!("a1={:#?}", a1);
+            NSLogv(a1);
             OBJC_NSLog(to_c_str("TESTING! From RUST! (OBJC_NSLog)"));
         } 
     }
