@@ -1,6 +1,6 @@
-use objc::*;
 use objc::runtime::*;
-use std::os::raw::{c_char, c_void, c_double};
+use objc::*;
+use std::os::raw::{c_char, c_double, c_void};
 
 pub static mut ORIGIMP: Option<Imp> = None;
 
@@ -16,9 +16,7 @@ fn to_c_str(s: &str) -> *const c_char {
     bytes.push(0);
     let ptr = bytes.as_ptr();
     std::mem::forget(bytes);
-    unsafe {
-        std::ffi::CStr::from_ptr(ptr as *const c_string::c_char).as_ptr()
-    }
+    unsafe { std::ffi::CStr::from_ptr(ptr as *const c_string::c_char).as_ptr() }
 }
 
 type set_background_alpha = unsafe extern "C" fn(this: &Object, _cmd: Sel, alpha: f64) -> c_double;
@@ -41,9 +39,12 @@ static LOAD: extern "C" fn() = {
             let f: set_background_alpha = my_set_background_alpha;
             // then we can transmute it to change its type
             let swizz_imp: Imp = std::mem::transmute(f);
-            OBJC_NSLog(to_c_str(
-                &format!("method = {:#?}, f = {:#?}, swizz_imp = {:#?}", std::mem::transmute::<*mut Method, *mut c_void>(method), std::mem::transmute::<set_background_alpha, *mut c_void>(f), std::mem::transmute::<Imp, *mut c_void>(swizz_imp)),
-            ));
+            OBJC_NSLog(to_c_str(&format!(
+                "method = {:#?}, f = {:#?}, swizz_imp = {:#?}",
+                std::mem::transmute::<*mut Method, *mut c_void>(method),
+                std::mem::transmute::<set_background_alpha, *mut c_void>(f),
+                std::mem::transmute::<Imp, *mut c_void>(swizz_imp)
+            )));
             ORIGIMP = Some(method_setImplementation(method, swizz_imp));
         }
     }
