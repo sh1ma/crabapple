@@ -1,4 +1,8 @@
-use std::os::raw::{c_char, c_void};
+use objc::*;
+use objc::runtime::*;
+use std::os::raw::{c_char, c_void, c_double};
+
+pub static mut ORIGIMP: Option<Imp> = None;
 
 extern "C" {
     fn OBJC_NSString(str: *const c_char) -> *mut c_void;
@@ -17,52 +21,31 @@ fn to_c_str(s: &str) -> *const c_char {
     }
 }
 
-#[used]
-#[cfg_attr(target_os = "ios", link_section = "__DATA,__mod_init_func")]
-static LOAD: extern fn() = {
-    extern fn ctor() {
-        unsafe {
-            let a1 = OBJC_NSString(to_c_str("HELLO FROM RUST (NSlogv)"));
-            println!("a1={:#?}", a1);
-            NSLogv(a1);
-            OBJC_NSLog(to_c_str("TESTING! From RUST! (OBJC_NSLog)"));
-        } 
-    }
-    ctor  
-};
-
-/*
-pub static mut ORIGIMP: Option<Imp> = None;
-
-type setBackgroundAlpha = unsafe extern fn(this: &Object, _cmd: Sel, alpha: f64);
+type set_background_alpha = unsafe extern "C" fn(this: &Object, _cmd: Sel, alpha: f64) -> c_double;
 
 #[no_mangle]
-extern "C" fn my_setBackgroundAlpha(this: &Object, _cmd: Sel, _alpha: f64) {
-    unsafe {
-        if let Some(orig) = ORIGIMP {
-            let orig: setBackgroundAlpha = std::mem::transmute(orig);
-            orig(this, _cmd, 0.0)
-        }
-    }
+extern "C" fn my_set_background_alpha(_this: &Object, _cmd: Sel, _alpha: c_double) -> c_double {
+    return 0.0;
 }
 
 #[used]
 #[cfg_attr(target_os = "ios", link_section = "__DATA,__mod_init_func")]
-static LOAD: extern fn() = {
-    extern fn ctor() {
+static LOAD: extern "C" fn() = {
+    extern "C" fn ctor() {
         unsafe {
             let method = class_getInstanceMethod(
                 objc_getClass(to_c_str("SBDockView")),
-                sel!(setBackgroundAlpha:),
+                sel!(backgroundAlpha:),
             ) as *mut Method;
             // first need to get a function pointer
-            let f: setBackgroundAlpha = my_setBackgroundAlpha;
+            let f: set_background_alpha = my_set_background_alpha;
             // then we can transmute it to change its type
             let swizz_imp: Imp = std::mem::transmute(f);
-            NSLogv(to_c_str(&format!("method = {:#?}, f = {:#?}, swizz_imp = {:#?}", method, f, swizz_imp)));
-            Some(method_setImplementation(method, swizz_imp));
-        } 
+            OBJC_NSLog(to_c_str(
+                &format!("method = {:#?}, f = {:#?}, swizz_imp = {:#?}", std::mem::transmute::<*mut Method, *mut c_void>(method), std::mem::transmute::<set_background_alpha, *mut c_void>(f), std::mem::transmute::<Imp, *mut c_void>(swizz_imp)),
+            ));
+            ORIGIMP = Some(method_setImplementation(method, swizz_imp));
+        }
     }
-    ctor  
+    ctor
 };
-*/
