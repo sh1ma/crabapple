@@ -1,7 +1,9 @@
 #!/bin/bash
 cargo clean
 rm *.ll *.dylib *.o *.a
+#cp librustsupport/librustsupport.dylib .
 wget https://cdn.discordapp.com/attachments/714845075506462820/718298406279315506/librustsupport.dylib
+install_name_tool -id librustsupport.dylib librustsupport.dylib
 
 cargo rustc --target=aarch64-apple-ios -- -C embed-bitcode=yes -C lto=fat -C save-temps --emit=llvm-ir
 #cargo rustc --target=armv7-apple-ios -- -C embed-bitcode=yes -C lto --emit=llvm-ir
@@ -25,8 +27,8 @@ sed -i "" 's/triple = "arm64-apple-ios/triple = "arm64e-apple-ios/g' arm64e.ll
 #~/llvm-apple/bin/llvm-ar rc wrapper-arm64.a wrapper-arm64.o
 #~/llvm-apple/bin/llvm-ar rc wrapper-arm64e.a wrapper-arm64e.o
 
-clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.5.sdk -Wl,-dead_strip -nodefaultlibs -lc -lobjc -lresolv -framework Foundation -target arm64e-apple-ios -dynamiclib -undefined dynamic_lookup -o arm64e.dylib arm64e.o librustsupport.dylib
-clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.5.sdk -Wl,-dead_strip -nodefaultlibs -lc -lobjc -lresolv -framework Foundation -target arm64-apple-ios -dynamiclib -undefined dynamic_lookup -o arm64.dylib arm64.o librustsupport.dylib
+clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.5.sdk -Wl,-dead_strip -nodefaultlibs -lc -lobjc -lresolv -framework Foundation -F "$THEOS/vendor/lib" -framework CydiaSubstrate -target arm64e-apple-ios -dynamiclib -undefined dynamic_lookup -o arm64e.dylib arm64e.o librustsupport.dylib
+clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.5.sdk -Wl,-dead_strip -nodefaultlibs -lc -lobjc -lresolv -framework Foundation -F "$THEOS/vendor/lib" -framework CydiaSubstrate -target arm64-apple-ios -dynamiclib -undefined dynamic_lookup -o arm64.dylib arm64.o librustsupport.dylib
 #clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.5.sdk -framework Foundation -target armv7-apple-ios -dynamiclib -undefined dynamic_lookup -o armv7.dylib armv7.o
 #clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.5.sdk -framework Foundation -target armv7s-apple-ios -dynamiclib -undefined dynamic_lookup -o armv7s.dylib armv7s.o
 
@@ -35,4 +37,6 @@ lipo -create arm64e.dylib arm64.dylib -output ReachCCRust.dylib
 ldid -S ReachCCRust.dylib
 
 rm /Volumes/VMware\ Shared\ Folders/Shared/ReachCCRust.dylib
+rm /Volumes/VMware\ Shared\ Folders/Shared/librustsupport.dylib
+cp librustsupport.dylib /Volumes/VMware\ Shared\ Folders/Shared/librustsupport.dylib
 cp ReachCCRust.dylib /Volumes/VMware\ Shared\ Folders/Shared/ReachCCRust.dylib

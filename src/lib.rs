@@ -8,6 +8,7 @@ extern "C" {
     fn OBJC_NSString(str: *const c_char) -> *mut c_void;
     fn OBJC_NSLog(str: *const c_char);
     fn NSLogv(nsFormat: *mut c_void); // format from inside rust or it dies
+    fn MSHookMessageEx(class: *mut c_void, selector: *mut c_void, replacement: *mut c_void, result: *mut c_void);
 }
 
 #[inline(always)]
@@ -27,7 +28,13 @@ fn to_nsstr(s: &str) -> *const c_void {
 type set_background_alpha = unsafe extern "C" fn(this: &Object, _cmd: Sel, alpha: f64) -> c_double;
 
 #[no_mangle]
-extern "C" fn my_set_background_alpha(_this: &Object, _cmd: Sel, _alpha: c_double) -> c_double {
+extern "C" fn my_set_background_alpha(this: &Object, cmd: Sel, alpha: c_double) -> c_double {
+    unsafe {
+        OBJC_NSLog(to_c_str(&format!(
+            "ReachCCRust my_set_background_alpha: this = {:#?}, cmd = {:#?}, alpha = {}",
+            this, cmd, alpha
+        )));
+    }
     return 0.0;
 }
 
@@ -36,21 +43,21 @@ extern "C" fn my_set_background_alpha(_this: &Object, _cmd: Sel, _alpha: c_doubl
 static LOAD: extern "C" fn() = {
     extern "C" fn ctor() {
         unsafe {
-            let method = class_getInstanceMethod(
-                objc_getClass(to_c_str("SBDockView")),
-                sel!(backgroundAlpha:),
-            ) as *mut Method;
-            // first need to get a function pointer
             let f: set_background_alpha = my_set_background_alpha;
-            // then we can transmute it to change its type
-            let swizz_imp: Imp = std::mem::transmute(f);
+            let swizz_imp: *mut c_void = std::mem::transmute(f);
+            let sb_dock_view: *mut c_void = std::mem::transmute(objc_getClass(to_c_str("SBDockView")));
+            let sba_sel: *mut c_void = std::mem::transmute(sel!(setBackgroundAlpha:));
+            let mut replaced: *mut c_void = std::ptr::null_mut();
             OBJC_NSLog(to_c_str(&format!(
-                "ReachCCRust: method = {:#?}, f = {:#?}, swizz_imp = {:#?}",
-                std::mem::transmute::<*mut Method, *mut c_void>(method),
-                std::mem::transmute::<set_background_alpha, *mut c_void>(f),
-                std::mem::transmute::<Imp, *mut c_void>(swizz_imp)
+                "ReachCCRust hooking: swizz_imp = {:#?}, sb_dock_view = {:#?}, sba_sel = {:#?}",
+                swizz_imp, sb_dock_view, sba_sel
             )));
-            ORIGIMP = Some(method_setImplementation(method, swizz_imp));
+            MSHookMessageEx(sb_dock_view, sba_sel, swizz_imp, &mut replaced as *mut *mut c_void as *mut c_void);
+            OBJC_NSLog(to_c_str(&format!(
+                "ReachCCRust hooking: replaced = {:#?}",
+                replaced
+            )));
+            ORIGIMP = Some(std::mem::transmute::<*mut c_void, Imp>(replaced));
         }
     }
     ctor
