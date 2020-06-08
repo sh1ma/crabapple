@@ -9,7 +9,7 @@ extern "C" {
     fn OBJC_NSString(str: *const c_char) -> *mut c_void;
     fn OBJC_NSLog(str: *const c_char);
     fn NSLogv(nsFormat: *mut c_void); // format from inside rust or it dies
-    fn MSHookMessageEx(class: *mut c_void, selector: *mut c_void, replacement: *mut c_void, result: &mut Option<NonNull<Imp>>);
+    fn MSHookMessageEx(class: *const Class, selector: Sel, replacement: *mut c_void, result: &mut Option<NonNull<Imp>>);
 }
 
 #[inline(always)]
@@ -50,11 +50,10 @@ extern "C" fn my_set_background_alpha(this: &Object, cmd: Sel, alpha: c_double) 
 #[cfg_attr(target_os = "ios", link_section = "__DATA,__mod_init_func")]
 static LOAD: extern "C" fn() = {
     extern "C" fn ctor() {
+        let sba_sel = sel!(setBackgroundAlpha:);
         unsafe {
-            let f: set_background_alpha = my_set_background_alpha;
-            let swizz_imp: *mut c_void = std::mem::transmute(f);
-            let sb_dock_view: *mut c_void = std::mem::transmute(objc_getClass(to_c_str("SBDockView")));
-            let sba_sel: *mut c_void = std::mem::transmute(sel!(setBackgroundAlpha:));
+            let sb_dock_view = objc_getClass(to_c_str("SBDockView"));
+            let swizz_imp: *mut c_void = std::mem::transmute(my_set_background_alpha as set_background_alpha);
             OBJC_NSLog(to_c_str(&format!(
                 "ReachCCRust hooking: swizz_imp = {:#?}, sb_dock_view = {:#?}, sba_sel = {:#?}",
                 swizz_imp, sb_dock_view, sba_sel
