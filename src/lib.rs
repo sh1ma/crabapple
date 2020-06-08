@@ -14,17 +14,17 @@ type set_background_alpha = unsafe extern "C" fn(this: &Object, cmd: Sel, alpha:
 
 #[no_mangle]
 extern "C" fn my_set_background_alpha(this: &Object, cmd: Sel, alpha: c_double) {
-    unsafe {
+    log(&format!(
+        "ReachCCRust my_set_background_alpha: this = {:#?}, cmd = {:#?}, alpha = {}",
+        this, cmd, alpha
+    ));
+    if let Some(orig) = ORIGIMP {
         log(&format!(
-            "ReachCCRust my_set_background_alpha: this = {:#?}, cmd = {:#?}, alpha = {}",
-            this, cmd, alpha
+            "ReachCCRust my_set_background_alpha = {:?}",
+            orig
         ));
-        if let Some(orig) = ORIGIMP {
-            let x: set_background_alpha = std::mem::transmute(orig);
-            log(&format!(
-                "ReachCCRust my_set_background_alpha = {:#?}",
-                orig
-            ));
+        unsafe {
+            let x: set_background_alpha = orig as usize as set_background_alpha;
             x(this, cmd, 0.0);
         }
     }

@@ -1,4 +1,5 @@
-use std::os::raw::c_char;
+use std::os::raw::{c_char, c_void};
+
 
 #[inline(always)]
 pub fn to_c_str(s: &str) -> *const c_char {
@@ -11,5 +12,5 @@ pub fn to_c_str(s: &str) -> *const c_char {
 
 #[inline(always)]
 pub fn to_nsstr(s: &str) -> *const c_void {
-    unsafe { OBJC_NSString(to_c_str(s)) }
+    unsafe { crate::ffi::OBJC_NSString(to_c_str(s)) }
 }

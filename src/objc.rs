@@ -1,10 +1,11 @@
 use crate::ffi::*;
-use objc::runtime::*;
+use crate::util::*;
+use ::objc::runtime::*;
 
-fn get_class(class: &str) -> *const Class {
-    unsafe { ffi::objc_getClass(util::to_c_str("SBDockView")) }
+pub fn get_class(class: &str) -> *const Class {
+    unsafe { objc_getClass(to_c_str("SBDockView")) }
 }
 
-fn log(data: &str) {
-    unsafe { ffi::OBJC_NSLog(util::to_c_str(data)) }
+pub fn log(data: &str) {
+    unsafe { OBJC_NSLog(to_c_str(data)) }
 }
