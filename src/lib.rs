@@ -1,15 +1,15 @@
 use objc::runtime::*;
 use objc::*;
 use std::os::raw::{c_char, c_double, c_void};
-use std::mem::MaybeUninit;
+use std::ptr::NonNull;
 
-pub static mut ORIGIMP: Option<Imp> = None;
+pub static mut ORIGIMP: Option<NonNull<Imp>> = None;
 
 extern "C" {
     fn OBJC_NSString(str: *const c_char) -> *mut c_void;
     fn OBJC_NSLog(str: *const c_char);
     fn NSLogv(nsFormat: *mut c_void); // format from inside rust or it dies
-    fn MSHookMessageEx(class: *mut c_void, selector: *mut c_void, replacement: *mut c_void, result: *mut Imp);
+    fn MSHookMessageEx(class: *mut c_void, selector: *mut c_void, replacement: *mut c_void, result: &mut Option<NonNull<Imp>>);
 }
 
 #[inline(always)]
@@ -59,16 +59,7 @@ static LOAD: extern "C" fn() = {
                 "ReachCCRust hooking: swizz_imp = {:#?}, sb_dock_view = {:#?}, sba_sel = {:#?}",
                 swizz_imp, sb_dock_view, sba_sel
             )));
-            let replaced= {
-                let mut x: MaybeUninit<Imp> = std::mem::MaybeUninit::uninit();
-                MSHookMessageEx(sb_dock_view, sba_sel, swizz_imp, x.as_mut_ptr());
-                x.assume_init()
-            };
-            OBJC_NSLog(to_c_str(&format!(
-                "ReachCCRust hooking: replaced = {:#?}",
-                replaced
-            )));
-            ORIGIMP = Some(replaced);
+            MSHookMessageEx(sb_dock_view, sba_sel, swizz_imp, &mut ORIGIMP);
         }
     }
     ctor
