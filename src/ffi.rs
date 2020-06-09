@@ -12,4 +12,5 @@ extern "C" {
 		replacement: *mut c_void,
 		result: &mut Option<NonNull<Imp>>,
 	);
+	pub fn ptr_strip(address: *mut c_void) -> *mut c_void;
 }

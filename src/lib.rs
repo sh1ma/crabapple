@@ -20,11 +20,10 @@ extern "C" fn my_set_background_alpha(this: &Object, cmd: Sel, alpha: c_double) 
 	));
 	unsafe {
 		if let Some(orig) = ORIGIMP {
-			let x: set_background_alpha = std::mem::transmute(orig);
-			log(&format!(
-				"ReachCCRust my_set_background_alpha = {:#?}",
-				x
-			));
+			log(&format!("ReachCCRust my_set_background_alpha = {:?}", orig));
+			let ptr: *mut c_void = std::mem::transmute(orig);
+			let nopac = ffi::ptr_strip(ptr);
+			let x: set_background_alpha = std::mem::transmute(nopac);
 			x(this, cmd, 0.0);
 		}
 	}
