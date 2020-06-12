@@ -1,0 +1,13 @@
+[package]
+name = "crabapple"
+version = "0.1.0"
+authors = ["luxxxy <luxx4x@protonmail.com>", "kritanta"]
+edition = "2018"
+license = "Zlib"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+objc = "0.2"
+c_string = "0.7"

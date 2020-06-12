@@ -1,13 +1,4 @@
-[package]
-name = "reachccrust"
-version = "0.1.0"
-authors = ["wlm"]
-edition = "2018"
-license = "Zlib"
-
-[lib]
-crate-type = ["cdylib"]
-
-[dependencies]
-objc = "0.2"
-c_string = "0.7"
+[workspace]
+members = [
+	"crabapple"
+]
