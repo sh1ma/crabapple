@@ -3,6 +3,7 @@ name = "reachccrust"
 version = "0.1.0"
 authors = ["wlm"]
 edition = "2018"
+license = "Zlib"
 
 [lib]
 crate-type = ["cdylib"]
