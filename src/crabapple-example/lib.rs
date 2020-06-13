@@ -1,5 +1,3 @@
-#![feature(concat_idents)]
-
 use crabapple::{hook_it, init_hooks};
 
 hook_it! {
