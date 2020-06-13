@@ -7,11 +7,11 @@ license = "Zlib"
 
 [lib]
 path = "lib.rs"
-crate-type = ["cdylib"]
 
 [dependencies]
 objc = "0.2"
 c_string = "0.7"
+paste = "0.1"
 
 [dev-dependencies]
 rusty-hook = "^0.11.1"

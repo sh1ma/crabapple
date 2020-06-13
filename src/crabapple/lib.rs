@@ -2,13 +2,13 @@ pub mod ffi;
 pub mod objc;
 pub mod util;
 
-use crate::objc::*;
-use ::objc::runtime::*;
-use ::objc::*;
-use std::os::raw::{c_double, c_void};
-use std::ptr::NonNull;
+pub mod deps {
+	pub use ::objc;
+	pub use paste;
+}
 
-pub static mut ORIGIMP: Option<NonNull<Imp>> = None;
+/*
+pub static ORIGIMP: AtomicPtr<c_void> = AtomicPtr::new(0 as *mut c_void);
 
 type SetBackgroundAlpha = unsafe extern "C" fn(this: &Object, cmd: Sel, alpha: f64);
 
@@ -18,14 +18,12 @@ extern "C" fn my_set_background_alpha(this: &Object, cmd: Sel, alpha: c_double) 
 		"ReachCCRust my_set_background_alpha: this = {:#?}, cmd = {:#?}, alpha = {}",
 		this, cmd, alpha
 	));
+	let ptr: *mut c_void = ORIGIMP.load(Ordering::Relaxed) as *mut _ as *mut c_void;
 	unsafe {
-		if let Some(orig) = ORIGIMP {
-			log(&format!("ReachCCRust my_set_background_alpha = {:?}", orig));
-			let ptr: *mut c_void = std::mem::transmute(orig);
-			let nopac = ffi::ptr_strip(ptr);
-			let x: SetBackgroundAlpha = std::mem::transmute(nopac);
-			x(this, cmd, 0.0);
-		}
+		log(&format!("ReachCCRust my_set_background_alpha = {:?}", ptr));
+		let nopac = ffi::ptr_strip(ptr);
+		let x: SetBackgroundAlpha = std::mem::transmute(nopac);
+		x(this, cmd, 0.0);
 	}
 }
 
@@ -41,9 +39,72 @@ static LOAD: extern "C" fn() = {
 			"ReachCCRust hooking: swizz_imp = {:#?}, sb_dock_view = {:#?}, sba_sel = {:#?}",
 			swizz_imp, sb_dock_view, sba_sel
 		));
-		unsafe {
-			ffi::MSHookMessageEx(sb_dock_view, sba_sel, swizz_imp, &mut ORIGIMP);
-		}
+		hook("SBDockView", sba_sel, swizz_imp, &ORIGIMP);
 	}
 	ctor
-};
+};*/
+
+#[macro_export]
+macro_rules! sel {
+	($name:expr) => {{
+		$crate::deps::objc::sel_impl!(concat!($name, '\0'))
+		}};
+}
+
+#[macro_export]
+macro_rules! hook_it {
+    (mod $mod_name:ident {
+        $(
+            #[hook(class = $class:expr, sel = $sel:expr)]
+            fn $fn_name:ident($($arg:ident: $ty_:ty),*) $body:tt
+        )*
+    }) => {
+        mod $mod_name {
+            $(
+                $crate::deps::paste::item! {
+                    type [<$fn_name _fn>] = unsafe extern "C" fn($($arg: $ty_),*);
+                    pub static [<$fn_name _orig>]: std::sync::atomic::AtomicPtr<std::os::raw::c_void> = std::sync::atomic::AtomicPtr::new(0 as *mut std::os::raw::c_void);
+
+                    #[no_mangle]
+                    extern "C" fn $fn_name($($arg: $ty_),*) {
+                        unsafe {
+							let [<$fn_name _ptr>]: *mut std::os::raw::c_void = [<$fn_name _orig>].load(std::sync::atomic::Ordering::Relaxed) as *mut _ as *mut std::os::raw::c_void;
+							let [<$fn_name _nopac>] = $crate::ffi::ptr_strip([<$fn_name _ptr>]);
+							let [<$fn_name _call>]: [<$fn_name _fn>] = std::mem::transmute([<$fn_name _nopac>]);
+                            return [<$fn_name _call>]($($arg),*);
+                        }
+                    }
+                }
+            )*
+
+            pub fn _INIT_HOOKS() {
+                unsafe {
+                    $(
+						$crate::deps::paste::expr! {
+							let target_sel = $crate::sel!($sel);
+							let [<$fn_name _ptr>] = $fn_name as [<$fn_name _fn>] as usize as *mut std::os::raw::c_void;
+							println!("Initializing class {}[{}] with hook {:?}", $class, $sel, [<$fn_name _ptr>]);
+							$crate::objc::hook($class, target_sel, [<$fn_name _ptr>], [<$fn_name _orig>].load(std::sync::atomic::Ordering::Relaxed));
+						};
+                    )*
+                }
+            }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! init_hooks {
+	($($hook_mod:ident),*) => {
+		#[used]
+		#[cfg_attr(target_os = "ios", link_section = "__DATA,__mod_init_func")]
+		static LOAD: extern "C" fn() = {
+			extern "C" fn ctor() {
+				$(
+					$hook_mod::_INIT_HOOKS();
+				)*
+			}
+		ctor
+		};
+	}
+}
