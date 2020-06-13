@@ -1,5 +1,6 @@
 use ::objc::runtime::*;
 use std::os::raw::{c_char, c_void};
+use std::ptr::NonNull;
 
 extern "C" {
 	pub fn OBJC_NSString(str: *const c_char) -> *mut c_void;
@@ -9,7 +10,7 @@ extern "C" {
 		class: *const Class,
 		selector: Sel,
 		replacement: *mut c_void,
-		result: *mut c_void,
+		result: &mut NonNull<Imp>,
 	);
 	pub fn ptr_strip(address: *mut c_void) -> *mut c_void;
 }
