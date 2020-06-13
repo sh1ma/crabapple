@@ -4,6 +4,8 @@ packages
 .cargo
 build.ninja
 
+out
+
 *.dylib
 *.o
 *.a

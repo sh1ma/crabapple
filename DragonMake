@@ -1,15 +1,25 @@
 ---
-name: ReachCCRust
+name: Crabapple
 icmd: sbreload
 
 BuildWithCargo:
   type: stage
-  stage: RUSTC=~/Downloads/rustc-ios-patched/bin/rustc cargo build --target aarch64-apple-ios
+  stage: 
+    - mkdir out
+    - RUSTC="$IOS_RUSTC/bin/rustc" cargo rustc --target=aarch64-apple-ios -- -C embed-bitcode=yes -C lto=fat -C save-temps --emit=llvm-ir
+    - cp crabapple/target/aarch64-apple-ios/debug/deps/reachccrust.ll out/arm64.ll
+    - cp crabapple/target/aarch64-apple-ios/debug/deps/reachccrust.ll out/arm64e.ll
+    - sed -i "" 's/triple = "arm64-apple-ios/triple = "arm64e-apple-ios/g' out/arm64e.ll
+    - $IOS_LLVM/bin/llc -mcpu=vortex -filetype=obj --arm-add-build-attributes -o out/arm64e.o out/arm64e.ll --mc-relax-all -mtriple=arm64e-apple-ios
+    - $IOS_LLVM/bin/llc -mcpu=cyclone -filetype=obj --arm-add-build-attributes -o out/arm64.o out/arm64.ll --mc-relax-all -mtriple=arm64-apple-ios
+    - clang -isysroot "$DRAGONBUILD/sdks/iPhoneOS.sdk" -Wl,-dead_strip -nodefaultlibs -lc -lobjc -lresolv -framework Foundation -F "$DRAGONBUILD/frameworks" -framework CydiaSubstrate -target arm64-apple-ios -dynamiclib -undefined dynamic_lookup -o out/arm64.dylib out/arm64.o librustsupport.dylib
+    - clang -isysroot "$DRAGONBUILD/sdks/iPhoneOS.sdk" -Wl,-dead_strip -nodefaultlibs -lc -lobjc -lresolv -framework Foundation -F "$DRAGONBUILD/frameworks" -framework CydiaSubstrate -target arm64e-apple-ios -dynamiclib -undefined dynamic_lookup -o out/arm64e.dylib out/arm64e.o librustsupport.dylib
+    - lipo -create out/arm64e.dylib out/arm64.dylib -output out/CrabappleTest.dylib
+    - ldid -S out/CrabappleTest.dylib
 
 CreateTweak:
   type: stage
-  stage: 
+  stage:
     - mkdir -p .dragon/_/Library/MobileSubstrate/DynamicLibraries/
-    - cp ReachCCRust.plist .dragon/_/Library/MobileSubstrate/DynamicLibraries/ReachCCRust.plist 
-    - cp target/aarch64-apple-ios/debug/libReachCCRust.dylib .dragon/_/Library/MobileSubstrate/DynamicLibraries/ReachCCRust.dylib
-    - ldid -S .dragon/_/Library/MobileSubstrate/DynamicLibraries/ReachCCRust.dylib
+    - cp res/CrabappleTest.plist .dragon/_/Library/MobileSubstrate/DynamicLibraries/CrabappleTest.plist 
+    - cp out/CrabappleTest.dylib .dragon/_/Library/MobileSubstrate/DynamicLibraries/CrabappleTest.dylib

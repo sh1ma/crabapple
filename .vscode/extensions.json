@@ -1,0 +1,8 @@
+{
+	"recommendations": [
+		"matklad.rust-analyzer",
+		"EditorConfig.EditorConfig",
+		"zhouronghui.propertylist",
+		"bungcip.better-toml"
+	]
+}

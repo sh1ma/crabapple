@@ -6,6 +6,7 @@ edition = "2018"
 license = "Zlib"
 
 [lib]
+path = "lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]

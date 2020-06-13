@@ -1,0 +1,13 @@
+[package]
+name = "crabapple-example"
+version = "0.1.0"
+authors = ["luxxxy <luxx4x@protonmail.com>"]
+edition = "2018"
+license = "Zlib"
+
+[lib]
+path = "lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+crabapple = { path = "../crabapple" }
