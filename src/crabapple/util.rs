@@ -1,4 +1,6 @@
-use objc::runtime::Imp;
+use objc::runtime::{Imp, Object};
+use objc::*;
+use std::ffi::CStr;
 use std::os::raw::{c_char, c_void};
 
 #[inline(always)]
@@ -13,6 +15,16 @@ pub fn to_c_str(s: &str) -> *const c_char {
 #[inline(always)]
 pub fn to_nsstr(s: &str) -> *const c_void {
 	unsafe { crate::ffi::OBJC_NSString(to_c_str(s)) }
+}
+
+#[inline(always)]
+pub fn from_nsstr(s: &Object) -> String {
+	let nschar: *mut std::os::raw::c_char = unsafe { msg_send![s, UTF8String] };
+	let c_str: &CStr = unsafe { CStr::from_ptr(nschar) };
+	match c_str.to_str() {
+		Ok(e) => e.to_string(),
+		Err(_) => "".to_string(),
+	}
 }
 
 #[inline(always)]
