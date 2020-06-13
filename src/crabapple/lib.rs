@@ -56,7 +56,7 @@ macro_rules! hook_it {
     (mod $mod_name:ident {
         $(
             #[hook(class = $class:expr, sel = $sel:expr)]
-            fn $fn_name:ident($($arg:ident: $ty_:ty),*) $body:tt
+            fn $fn_name:ident($orig:ident, $($arg:ident: $ty_:ty),*) $body:tt
         )*
     }) => {
         mod $mod_name {
@@ -70,8 +70,8 @@ macro_rules! hook_it {
                         unsafe {
 							let [<$fn_name _ptr>]: *mut std::os::raw::c_void = [<$fn_name _orig>].load(std::sync::atomic::Ordering::Relaxed) as *mut _ as *mut std::os::raw::c_void;
 							let [<$fn_name _nopac>] = $crate::ffi::ptr_strip([<$fn_name _ptr>]);
-							let [<$fn_name _call>]: [<$fn_name _fn>] = std::mem::transmute([<$fn_name _nopac>]);
-                            return [<$fn_name _call>]($($arg),*);
+							let $orig: [<$fn_name _fn>] = std::mem::transmute([<$fn_name _nopac>]);
+							$body
                         }
                     }
                 }
