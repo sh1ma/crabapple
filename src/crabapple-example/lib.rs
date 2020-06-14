@@ -21,9 +21,10 @@ hook_it! {
 			use crabapple::util::from_nsstr;
 		}
 		#[hook(class = "BBServer", sel = "_publishBulletinRequest:")]
-		fn pbr(orig, this: &crabapple::deps::objc::runtime::Object, cmd: crabapple::deps::objc::runtime::Sel,
-			request: &crabapple::deps::objc::runtime::Object,
-			appid: &crabapple::deps::objc::runtime::Object,
+		fn pbr(orig, this: &Object,
+			cmd: Sel,
+			request: &Object,
+			appid: &Object,
 			arg3: u64)
 		{
 			let title = *request.get_ivar::<&Object>("title");
