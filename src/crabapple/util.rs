@@ -3,6 +3,8 @@ use objc::*;
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_void};
 
+use crate::objc::*;
+
 #[inline(always)]
 pub fn to_c_str(s: &str) -> *const c_char {
 	let mut bytes = String::from(s).into_bytes();

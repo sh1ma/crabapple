@@ -10,6 +10,7 @@ path = "lib.rs"
 
 [dependencies]
 objc = "0.2"
+objc-foundation = "0.1"
 c_string = "0.7"
 paste = "0.1"
 

@@ -18,6 +18,7 @@ hook_it! {
 	mod notification_example {
 		imports {
 			use crabapple::deps::objc::runtime::*;
+			use crabapple::deps::foundation::NSString;
 			use crabapple::util::from_nsstr;
 		}
 		#[hook(class = "BBServer", sel = "_publishBulletinRequest:")]
@@ -27,10 +28,10 @@ hook_it! {
 			appid: &Object,
 			arg3: u64)
 		{
-			let title = *request.get_ivar::<&Object>("title");
-			let subtitle = *request.get_ivar::<&Object>("subtitle");
-			let message = *request.get_ivar::<&Object>("message");
-			crabapple::objc::log(&format!("Crabapple notification_example | {} - {} - {}", from_nsstr(title), from_nsstr(subtitle), from_nsstr(message)));
+			let title: NSString = *request.get_ivar::<&Object>("title");
+			let subtitle: NSString = *request.get_ivar::<&Object>("subtitle");
+			let message: NSString = *request.get_ivar::<&Object>("message");
+			crabapple::objc::log(&format!("Crabapple notification_example | {} - {} - {}", title, subtitle, message));
 			orig(this, cmd, request, appid, arg3);
 		}
 	}
