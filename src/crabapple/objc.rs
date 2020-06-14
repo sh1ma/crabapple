@@ -11,7 +11,7 @@ pub fn get_class(class: &str) -> *const Class {
 }
 
 pub fn log(data: &str) {
-	unsafe { NSLogv(NSString::from_str(data)) }
+	unsafe { NSLogv(&*NSString::from_str(data)) }
 }
 
 pub fn hook(class: &str, selector: Sel, replacement: *mut c_void, orig: &mut Option<NonNull<Imp>>) {

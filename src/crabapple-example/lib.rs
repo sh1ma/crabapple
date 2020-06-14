@@ -28,10 +28,10 @@ hook_it! {
 			appid: &Object,
 			arg3: u64)
 		{
-			let title: NSString = *request.get_ivar::<&Object>("title");
-			let subtitle: NSString = *request.get_ivar::<&Object>("subtitle");
-			let message: NSString = *request.get_ivar::<&Object>("message");
-			crabapple::objc::log(&format!("Crabapple notification_example | {} - {} - {}", title, subtitle, message));
+			let title: *const NSString = *request.get_ivar::<*mut Object>("title") as *mut NSString;
+			let subtitle: *const NSString = *request.get_ivar::<*mut Object>("subtitle") as *mut NSString;
+			let message: *const NSString = *request.get_ivar::<*mut Object>("message") as *mut NSString;
+			crabapple::objc::log(&format!("Crabapple notification_example | {:?} - {:?} - {:?}", title, subtitle, message));
 			orig(this, cmd, request, appid, arg3);
 		}
 	}
