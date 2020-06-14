@@ -54,12 +54,16 @@ macro_rules! sel {
 #[macro_export]
 macro_rules! hook_it {
     (mod $mod_name:ident {
+		imports {
+            $($prefix:item)*
+        }
         $(
             #[hook(class = $class:expr, sel = $sel:expr)]
             fn $fn_name:ident($orig:ident, $($arg:ident: $ty_:ty),*) $body:tt
         )*
     }) => {
         mod $mod_name {
+			$($prefix)*
             $(
                 $crate::deps::paste::item! {
                     type [<$fn_name _fn>] = unsafe extern "C" fn($($arg: $ty_),*);
@@ -83,10 +87,19 @@ macro_rules! hook_it {
 						$crate::deps::paste::expr! {
 							let target_sel = $crate::sel!($sel);
 							let [<$fn_name _ptr>] = $fn_name as [<$fn_name _fn>] as usize as *mut std::os::raw::c_void;
-							println!("Initializing class {}[{}] with hook {:?}", $class, $sel, [<$fn_name _ptr>]);
-							let mut trampoline: std::ptr::NonNull<$crate::deps::objc::runtime::Imp> = std::ptr::NonNull::dangling();
+							$crate::objc::log(&format!("Crabapple - Initializing class {}[{}] with hook {:#?}", $class, $sel, [<$fn_name _ptr>]));
+							let mut trampoline: Option<std::ptr::NonNull<$crate::deps::objc::runtime::Imp>> = None;
 							$crate::objc::hook($class, target_sel, [<$fn_name _ptr>], &mut trampoline);
-							[<$fn_name _orig>].store(trampoline.as_ptr(), std::sync::atomic::Ordering::Relaxed);
+							match trampoline {
+								Some(t) => {
+									let trampoline_ptr = t.as_ptr();
+									[<$fn_name _orig>].store(trampoline_ptr, std::sync::atomic::Ordering::Relaxed);
+									$crate::objc::log(&format!("Crabapple - Hooked class {}[{}] with trampoline {:#?}", $class, $sel, trampoline_ptr));
+								},
+								_ => {
+									$crate::objc::log(&format!("Crabapple - Failed to hook class {}[{}]", $class, $sel));
+								}
+							}
 						};
                     )*
                 }

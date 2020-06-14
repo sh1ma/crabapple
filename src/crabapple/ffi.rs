@@ -10,7 +10,7 @@ extern "C" {
 		class: *const Class,
 		selector: Sel,
 		replacement: *mut c_void,
-		result: &mut NonNull<Imp>,
+		result: &mut Option<NonNull<Imp>>,
 	);
 	pub fn ptr_strip(address: *mut c_void) -> *mut c_void;
 }

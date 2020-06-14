@@ -12,7 +12,7 @@ pub fn log(data: &str) {
 	unsafe { OBJC_NSLog(to_c_str(data)) }
 }
 
-pub fn hook(class: &str, selector: Sel, replacement: *mut c_void, orig: &mut NonNull<Imp>) {
+pub fn hook(class: &str, selector: Sel, replacement: *mut c_void, orig: &mut Option<NonNull<Imp>>) {
 	unsafe {
 		MSHookMessageEx(get_class(class), selector, replacement, orig);
 	}
